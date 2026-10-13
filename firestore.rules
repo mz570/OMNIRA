@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isThreadParticipant(threadId) {
+      let thread = get(/databases/$(database)/documents/directThreads/$(threadId));
+      return signedIn()
+        && thread.exists()
+        && request.auth.uid in thread.data.participants;
+    }
+
+    // Notifications: preserve the existing authenticated-user access.
+    match /notifications/{id} {
+      allow read, write: if signedIn();
+    }
+
+    // Classes and their subcollections: preserve existing access.
+    match /classes/{classId} {
+      allow read, write: if signedIn();
+
+      match /{allSubcollections=**} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    // User profiles: preserve existing authenticated-user access.
+    match /users/{userId} {
+      allow read, write: if signedIn();
+    }
+
+    // Direct-message threads are visible only to their participants.
+    match /directThreads/{threadId} {
+      allow get, list: if signedIn()
+        && request.auth.uid in resource.data.participants;
+
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.keys().hasOnly([
+          'id',
+          'participants',
+          'lastMessage',
+          'lastTimestamp',
+          'lastSenderId',
+          'lastReadBy',
+          'hiddenFor'
+        ]);
+
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'id',
+          'participants',
+          'lastMessage',
+          'lastTimestamp',
+          'lastSenderId',
+          'lastReadBy',
+          'hiddenFor'
+        ])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastSenderId'])
+          || request.resource.data.lastSenderId == request.auth.uid
+        );
+
+      match /messages/{messageId} {
+        allow read: if isThreadParticipant(threadId);
+
+        allow create: if isThreadParticipant(threadId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'id',
+            'senderId',
+            'senderName',
+            'senderProfileImageUrl',
+            'message',
+            'attachmentUrl',
+            'attachmentName',
+            'timestamp',
+            'readBy'
+          ])
+          && request.resource.data.readBy is list
+          && request.auth.uid in request.resource.data.readBy
+          && (
+            request.resource.data.message is string
+            && request.resource.data.message.size() > 0
+            || request.resource.data.attachmentUrl is string
+            && request.resource.data.attachmentUrl.size() > 0
+          );
+
+        allow update: if isThreadParticipant(threadId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['message', 'readBy'])
+          && (
+            resource.data.senderId == request.auth.uid
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+          )
+          && request.resource.data.readBy is list
+          && request.auth.uid in request.resource.data.readBy;
+
+        allow delete: if isThreadParticipant(threadId)
+          && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // Collection-group reads used by global materials and assignments.
+    match /{path=**}/assignments/{id} {
+      allow read: if signedIn();
+    }
+    match /{path=**}/materials/{id} {
+      allow read: if signedIn();
+    }
+  }
+}

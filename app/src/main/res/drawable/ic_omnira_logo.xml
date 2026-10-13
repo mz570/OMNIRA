@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Central O Symbol (Vibrant Mint Green) -->
+    <!-- Single path with EvenOdd fill type to ensure the hole is transparent -->
+    <path
+        android:fillColor="#3DD78D"
+        android:fillType="evenOdd"
+        android:pathData="M50,30 C60,30 68,38 68,50 C68,62 60,70 50,70 C40,70 32,62 32,50 C32,38 40,30 50,30 Z M50,38 C46,38 42,43 42,50 C42,57 46,62 50,62 C54,62 58,57 58,50 C58,43 54,38 50,38 Z" />
+
+    <!-- Orbits (Dark Grey for visibility on all backgrounds) -->
+    <path
+        android:strokeColor="#546E7A"
+        android:strokeWidth="1.2"
+        android:pathData="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+    <path
+        android:strokeColor="#546E7A"
+        android:strokeWidth="1.2"
+        android:pathData="M50,50 m-38,0 a38,20 45 1,1 76,0 a38,20 45 1,1 -76,0" />
+    <path
+        android:strokeColor="#546E7A"
+        android:strokeWidth="1.2"
+        android:pathData="M50,50 m-38,0 a38,20 -45 1,1 76,0 a38,20 -45 1,1 -76,0" />
+
+    <!-- Connection Nodes (Mint Green) -->
+    <path android:fillColor="#3DD78D" android:pathData="M12,50 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+    <path android:fillColor="#3DD78D" android:pathData="M88,50 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+    <path android:fillColor="#3DD78D" android:pathData="M24,26 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+    <path android:fillColor="#3DD78D" android:pathData="M76,74 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+</vector>
