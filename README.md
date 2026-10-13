@@ -24,7 +24,7 @@ OMNIRA brings class announcements, study materials, assignments, attendance, rou
 ├── app/
 │   └── src/main/java/com/omnira/
 │       ├── MainActivity.kt          # Compose entry point and navigation
-│       ├── data/Models.kt           # Firestore data models
+│       ├── data/                    # Firestore models and account deletion flow
 │       ├── ui/
 │       │   ├── components/          # Reusable Compose components
 │       │   ├── screens/             # App screens and feature flows
@@ -34,6 +34,8 @@ OMNIRA brings class announcements, study materials, assignments, attendance, rou
 │   ├── ARCHITECTURE.md
 │   ├── DATABASE.md
 │   └── DESIGN.md
+├── CHANGELOG.md                    # Production release notes
+├── firestore.rules                 # Firestore rules starting point
 ├── LICENSE.md                       # OMNIRA proprietary-use notice
 └── README.md
 ```
@@ -82,8 +84,11 @@ The app reads and writes Firestore directly from Android screens. Configure and 
 
 The repository includes a starting ruleset in `firestore.rules`. Review and test it against your Firebase project before deploying. The preserved class, notification, and profile rules allow broad access to any authenticated user; production deployments should restrict them and add server-side validation for sensitive operations such as member management, approvals, notification delivery, and retention cleanup.
 
+The Profile account-deletion flow requires the matching direct-message participant-removal rule in `firestore.rules`. Publish and test the rules in the Firebase project before enabling account deletion in a production build. Account cleanup runs from the client and can partially complete if a request fails; use a trusted backend for stronger transactional deletion guarantees.
+
 ## Documentation
 
+- [Production changelog](CHANGELOG.md)
 - [Architecture and feature flows](docs/ARCHITECTURE.md)
 - [Firestore collections and document shapes](docs/DATABASE.md)
 - [UI design system](docs/DESIGN.md)

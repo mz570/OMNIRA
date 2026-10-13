@@ -53,7 +53,7 @@ The class bell filters notifications by class and recipient. The general notific
 
 | Field | Type | Purpose |
 | --- | --- | --- |
-| `participants` | array of two strings | User IDs in the conversation |
+| `participants` | array of user IDs | Normally two user IDs; account deletion removes the departing user, so a thread can temporarily remain with one participant |
 | `lastMessage` | string | Inbox preview (text or attachment label) |
 | `lastTimestamp` | integer | Timestamp of the latest message |
 | `lastSenderId` | string | Sender of the latest message |
@@ -61,6 +61,11 @@ The class bell filters notifications by class and recipient. The general notific
 | `hiddenFor` | array of strings | Users who removed the thread from their inbox |
 
 Messages are stored in `directThreads/{threadId}/messages/{messageId}`.
+
+Account deletion removes the departing user's direct messages and removes their ID
+from the thread's `participants`, `hiddenFor`, and `lastReadBy` arrays. If they sent
+the last message, the preview fields are cleared. A remaining thread document can
+have one participant after cleanup.
 
 ## Class subcollections
 
@@ -96,3 +101,5 @@ The canonical Kotlin data classes live in `app/src/main/java/com/omnira/data/Mod
 - UI filtering does not provide authorization. `firestore.rules` includes participant-scoped direct-message access, but its legacy class/profile/notification permissions remain broad and must be tightened before production.
 - Define a retention policy and server-side cleanup for production. Client-side pruning only runs when an admin opens class chat and is not a guaranteed scheduled deletion mechanism.
 - Consider moving large membership arrays into membership documents as classes grow; arrays are subject to Firestore document limits and are less suitable for high fan-out.
+- The Profile account-deletion flow locates supported authored content through `authorId`, `senderId`, `teacherId`, `userId`, and chat-report identity fields. Class routines do not currently carry an author ID, so the client cannot identify and remove a user's routines. Cloudinary file objects are also outside Firestore cleanup.
+- Account deletion is a sequence of client-side Firestore operations followed by Firebase Authentication deletion, not an atomic cascade; partial cleanup is possible if an operation fails. The thread participant-removal update requires the corresponding rule in `firestore.rules` to be deployed.

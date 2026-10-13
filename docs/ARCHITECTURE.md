@@ -37,6 +37,8 @@ Screens currently access Firebase SDKs directly. There is no repository, use-cas
 
 The classroom route accepts a class code and an optional initial tab. The inbox has a conversation-list route and a direct-message route keyed by recipient user ID.
 
+`AppNavigation` observes validated network connectivity and overlays an offline banner across the app when no validated internet connection is available.
+
 ## Feature flows
 
 ### Classroom membership and moderation
@@ -58,6 +60,12 @@ Class chat is stored under each class and supports read receipts, member-level h
 
 Media is uploaded through `uploadToCloudinary` and referenced by URL in Firestore. `Coil` displays image URLs and Android `DownloadManager` handles downloads.
 
+### Account deletion
+
+The Profile screen requires the user to type `DELETE` and re-enter their password. The client reauthenticates the email/password account, transfers classes owned by the user to an existing admin or member, removes memberships, and deletes supported Firestore records linked through user IDs. Firebase Authentication is deleted only after the Firestore cleanup succeeds. Deletion is blocked when an owned class has no other admin or member to receive ownership.
+
+This is a multi-step client workflow, not an atomic server-side cascade. A failed request can leave some cleanup completed while the account still exists. The cleanup can only remove records with supported ownership fields; class records such as routines do not currently identify their author. Cloudinary uploads are not deleted.
+
 ## State and asynchronous work
 
 Compose screen state is held with `remember`, `rememberSaveable`, effects, and Firestore snapshot listeners. Remove snapshot listener registrations in `DisposableEffect` cleanup. For new database operations:
@@ -75,6 +83,7 @@ The root Gradle build uses a version catalog. The app module is configured for C
 ## Known deployment work
 
 - Review and test `firestore.rules`; several legacy class/profile/notification rules intentionally preserve broad authenticated-user access and need tightening before production.
+- Publish the direct-message participant-removal rule in `firestore.rules` before releasing account deletion; test deletion against the production Firebase project and consider moving the multi-step cleanup to trusted backend code.
 - Move privileged writes to trusted server code. Media uploads use an unsigned Cloudinary preset, which must be restricted in the Cloudinary dashboard.
 - Keep API secrets out of Android source, Gradle BuildConfig, and the repository.
 - Add automated tests for authorization, approval flows, message operations, and retention behavior.

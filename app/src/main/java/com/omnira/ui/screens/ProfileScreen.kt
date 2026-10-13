@@ -26,12 +26,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.omnira.data.deleteAccount
 import com.omnira.ui.theme.GreenPrimary
 import com.omnira.ui.theme.OMNIRATheme
 import com.omnira.ui.theme.YellowSecondary
@@ -58,6 +60,10 @@ fun ProfileScreen(
     var profileImageUrl by rememberSaveable { mutableStateOf("") }
     var isLoading by rememberSaveable { mutableStateOf(true) }
     var isUploading by rememberSaveable { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var deletionConfirmation by remember { mutableStateOf("") }
+    var deletionPassword by remember { mutableStateOf("") }
+    var isDeletingAccount by remember { mutableStateOf(false) }
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -168,6 +174,10 @@ fun ProfileScreen(
                             ) {
                                 Text("Logout", style = MaterialTheme.typography.labelLarge, color = Color.Red)
                             }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            DeleteAccountButton(enabled = !isDeletingAccount) {
+                                showDeleteAccountDialog = true
+                            }
                         }
 
                         Column(modifier = Modifier.weight(0.6f)) {
@@ -217,9 +227,107 @@ fun ProfileScreen(
                     ) {
                         Text("Logout", style = MaterialTheme.typography.labelLarge, color = Color.Red)
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    DeleteAccountButton(enabled = !isDeletingAccount) {
+                        showDeleteAccountDialog = true
+                    }
                 }
             }
         }
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isDeletingAccount) {
+                    showDeleteAccountDialog = false
+                    deletionPassword = ""
+                }
+            },
+            title = { Text("Delete your account?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "This permanently deletes your profile, messages, and content you created. " +
+                            "Classes you own will be transferred to an existing admin or member. " +
+                            "You will be signed out, and this cannot be undone. Uploaded files stored " +
+                            "on Cloudinary may remain."
+                    )
+                    OutlinedTextField(
+                        value = deletionConfirmation,
+                        onValueChange = { deletionConfirmation = it },
+                        label = { Text("Type DELETE to confirm") },
+                        singleLine = true,
+                        enabled = !isDeletingAccount
+                    )
+                    OutlinedTextField(
+                        value = deletionPassword,
+                        onValueChange = { deletionPassword = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        enabled = !isDeletingAccount,
+                        visualTransformation = PasswordVisualTransformation()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = deletionConfirmation == "DELETE" &&
+                        deletionPassword.isNotBlank() && !isDeletingAccount,
+                    onClick = {
+                        isDeletingAccount = true
+                        deleteAccount(auth, db, deletionPassword)
+                            .addOnSuccessListener {
+                                auth.signOut()
+                                onLogoutClick()
+                            }
+                            .addOnFailureListener { error ->
+                                isDeletingAccount = false
+                                deletionPassword = ""
+                                Toast.makeText(
+                                    context,
+                                    "Account deletion failed: ${error.localizedMessage ?: "Please try again."}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                    }
+                ) {
+                    if (isDeletingAccount) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Delete account", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isDeletingAccount,
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        deletionPassword = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun DeleteAccountButton(enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(55.dp)
+            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Delete Account", style = MaterialTheme.typography.titleMedium, color = Color.White)
     }
 }
 

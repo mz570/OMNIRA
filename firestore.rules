@@ -52,19 +52,47 @@ service cloud.firestore {
 
       allow update: if signedIn()
         && request.auth.uid in resource.data.participants
-        && request.resource.data.participants == resource.data.participants
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'id',
-          'participants',
-          'lastMessage',
-          'lastTimestamp',
-          'lastSenderId',
-          'lastReadBy',
-          'hiddenFor'
-        ])
         && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastSenderId'])
-          || request.resource.data.lastSenderId == request.auth.uid
+          (
+            request.resource.data.participants == resource.data.participants
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'id',
+              'participants',
+              'lastMessage',
+              'lastTimestamp',
+              'lastSenderId',
+              'lastReadBy',
+              'hiddenFor'
+            ])
+            && (
+              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastSenderId'])
+              || request.resource.data.lastSenderId == request.auth.uid
+            )
+          )
+          || (
+            request.resource.data.participants is list
+            && request.resource.data.participants.size() == resource.data.participants.size() - 1
+            && resource.data.participants.hasAll(request.resource.data.participants)
+            && !(request.auth.uid in request.resource.data.participants)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'participants',
+              'hiddenFor',
+              'lastReadBy',
+              'lastMessage',
+              'lastSenderId',
+              'lastTimestamp'
+            ])
+            && (
+              !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['lastMessage', 'lastSenderId', 'lastTimestamp'])
+              || (
+                resource.data.lastSenderId == request.auth.uid
+                && request.resource.data.lastMessage == ''
+                && request.resource.data.lastSenderId == ''
+                && request.resource.data.lastTimestamp == 0
+              )
+            )
+          )
         );
 
       match /messages/{messageId} {
