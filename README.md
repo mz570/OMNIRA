@@ -89,6 +89,7 @@ The Profile account-deletion flow requires the matching direct-message participa
 ## Documentation
 
 - [Production changelog](CHANGELOG.md)
+- [Project report (LaTeX)](docs/PROJECT_REPORT.tex)
 - [Architecture and feature flows](docs/ARCHITECTURE.md)
 - [Firestore collections and document shapes](docs/DATABASE.md)
 - [UI design system](docs/DESIGN.md)

@@ -1,0 +1,269 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{enumitem}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    pdftitle={OMNIRA Classroom Collaboration App Project Report}
+}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.35}
+
+\newcommand{\reporttitle}{OMNIRA: Classroom Collaboration App}
+\newcommand{\fillin}[1]{\textit{[Enter #1]}}
+\newcommand{\memberrow}[1]{#1 & \fillin{team member name} & \fillin{student ID} \\ \hline}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Huge\bfseries \reporttitle\par}
+    \vspace{1.5cm}
+    {\Large Project Report\par}
+    \vfill
+    {\large
+    Course: \fillin{course name}\\[0.5em]
+    Course code: \fillin{course code}\\[0.5em]
+    University: \fillin{university name}\\[0.5em]
+    Lecturer: \fillin{lecturer name}
+    \par}
+    \vfill
+    {\large Submission date: \fillin{submission date}\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{Team and Course Information}
+\addcontentsline{toc}{chapter}{Team and Course Information}
+
+\textbf{Course name:} \fillin{course name}\\
+\textbf{Course code:} \fillin{course code}\\
+\textbf{University name:} \fillin{university name}\\
+\textbf{Lecturer name:} \fillin{lecturer name}
+
+\vspace{1em}
+\textbf{Project team members}
+
+Fill in one row for each team member and remove any unused rows.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{1.2cm}|X|X|}
+\hline
+\textbf{No.} & \textbf{Team member name} & \textbf{Student ID} \\ \hline
+\memberrow{1}
+\memberrow{2}
+\memberrow{3}
+\memberrow{4}
+\memberrow{5}
+\memberrow{6}
+\end{tabularx}
+\end{center}
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Executive Summary}
+OMNIRA is an Android classroom collaboration application designed to bring common
+class activities into one mobile app. It supports classroom membership, announcements,
+study materials, assignments, routines, attendance, notifications, class chat, and
+direct messaging. The client is built with Kotlin and Jetpack Compose and uses Firebase
+Authentication and Cloud Firestore for identity and application data. Cloudinary is
+used for media uploads.
+
+This report describes the current application, its main workflows and technical
+structure, and important production considerations. It also provides a dedicated
+classroom-interface page for inserting a screenshot and a team information page for
+course and member details.
+
+\chapter{Introduction}
+\section{Background}
+Classroom activities often rely on separate channels for announcements, learning
+resources, assignments, attendance, schedules, and communication. OMNIRA explores a
+single mobile interface for these activities, allowing students and class administrators
+to access classroom information and communication features from an Android device.
+
+\section{Problem Statement}
+When classroom communication and resources are spread across unrelated tools, users
+may need to switch between apps to find updates, submit work, check schedules, or
+contact classmates. A unified classroom application can make these workflows easier
+to find and manage.
+
+\section{Project Aim}
+The aim of OMNIRA is to provide an Android application that combines essential
+classroom information management and communication features in one user interface.
+
+\section{Objectives}
+\begin{itemize}[leftmargin=*]
+    \item Provide account registration, sign-in, profile management, and logout.
+    \item Allow users to create classrooms or request access using a class code.
+    \item Provide class announcements, materials, assignments, routines, and attendance.
+    \item Support class chat, direct conversations, and user-facing notifications.
+    \item Display a connectivity warning when the device has no validated internet access.
+    \item Provide a deliberate account-deletion workflow with password reauthentication.
+\end{itemize}
+
+\chapter{Project Scope}
+\section{Included Features}
+The application includes the following user-facing areas:
+\begin{itemize}[leftmargin=*]
+    \item Authentication and profile screens.
+    \item Classroom creation, joining, membership administration, and class content.
+    \item Attendance sessions and attendance-sheet uploads.
+    \item Notifications, class chat, and direct messaging.
+    \item Media upload and file download support.
+    \item An app-wide offline connectivity banner.
+    \item Profile-based account deletion with typed confirmation and reauthentication.
+\end{itemize}
+
+\section{Out of Scope and Known Limitations}
+The current application is an Android client backed by Firebase and Cloudinary; it
+does not include a separate web client or a dedicated administrative portal. Account
+deletion is coordinated by client-side Firestore operations rather than an atomic
+server-side cascade. If cleanup fails partway through, some Firestore records may
+already have been removed while the authentication account remains active. Files
+uploaded to Cloudinary are not deleted by this flow. Owned classes require another
+admin or member to receive ownership before deletion can proceed.
+
+\chapter{Requirements}
+\section{Functional Requirements}
+\begin{enumerate}[leftmargin=*]
+    \item Users can register and sign in with Firebase Authentication.
+    \item Users can create a class or submit a join request using a class code.
+    \item Class administrators can manage membership and classroom content.
+    \item Users can access class announcements, materials, assignments, routines, and attendance.
+    \item Users can communicate through class chat and direct conversations.
+    \item The application displays an offline warning when Android reports no validated internet.
+    \item Users can request account deletion after typing \texttt{DELETE} and providing their password.
+\end{enumerate}
+
+\section{Non-Functional Requirements}
+\begin{itemize}[leftmargin=*]
+    \item The UI should adapt to portrait and landscape device orientations.
+    \item Authentication and Firestore operations should report failures to users.
+    \item Firebase access must be governed by deployed Firestore Security Rules.
+    \item Credentials and private API secrets must not be embedded in the Android app.
+\end{itemize}
+
+\chapter{System Design and Implementation}
+\section{Technology Stack}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Language and UI:} Kotlin, Jetpack Compose, and Material 3.
+    \item \textbf{Navigation:} Android Navigation Compose.
+    \item \textbf{Authentication:} Firebase Authentication.
+    \item \textbf{Application database:} Cloud Firestore.
+    \item \textbf{Media:} Cloudinary Android SDK and Coil image loading.
+    \item \textbf{Build:} Gradle with an Android application module.
+\end{itemize}
+
+\section{Architecture}
+The application is a single-module Android project. The Compose screens manage UI
+state and call Firebase services directly. \texttt{MainActivity} hosts navigation and
+observes Android network connectivity to display the offline banner. Data classes
+represent common Firestore records, while utility functions handle media transfers
+and related helpers.
+
+\section{Data Model}
+The main Firestore collections include \texttt{users}, \texttt{classes},
+\texttt{notifications}, and \texttt{directThreads}. Class-scoped subcollections
+store posts, comments, materials, assignments, routines, attendance, chat messages,
+join requests, and chat reports. Direct conversation messages are stored below each
+thread document.
+
+\section{Account Deletion Workflow}
+The Profile screen asks the user to enter \texttt{DELETE} and re-enter the account
+password. The client reauthenticates the email/password user, transfers owned
+classrooms to an existing admin or member, removes supported linked Firestore data,
+deletes the user's profile, and then deletes the Firebase Authentication account.
+Deletion cannot proceed if a class has no eligible owner replacement. The matching
+Firestore rules must be deployed for direct-thread participant removal.
+
+\chapter{Classroom User Interface}
+This page is reserved for the classroom screen from the running OMNIRA application.
+Replace the placeholder below with a screenshot of the classroom interface. When
+compiling from the repository root, a suggested image path is
+\texttt{docs/images/classroom-ui.png}; create the directory and place the screenshot
+there, or update the path below to match the image location.
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{docs/images/classroom-ui.png}{
+        \includegraphics[width=0.92\textwidth,height=0.72\textheight,keepaspectratio]
+            {docs/images/classroom-ui.png}
+    }{
+        \fbox{
+            \parbox[c][0.58\textheight][c]{0.88\textwidth}{
+                \centering
+                \Large Classroom UI Screenshot Slot\\[1em]
+                \normalsize
+                Add the classroom screenshot at
+                \texttt{docs/images/classroom-ui.png}, then compile this report again.
+            }
+        }
+    }
+    \caption{OMNIRA classroom interface}
+    \label{fig:classroom-ui}
+\end{figure}
+
+\chapter{Security and Production Considerations}
+The application uses client-side Firebase SDK calls, so Firestore Security Rules are
+essential: UI checks alone do not enforce access control. The repository rules preserve
+broad authenticated access for some legacy collections and should be reviewed and
+restricted before production use. The account-deletion workflow requires the updated
+direct-message rules to be published. Client-side deletion is not atomic and should be
+moved to a trusted backend if stronger consistency guarantees are required.
+
+Cloudinary unsigned upload presets should be restricted. API secrets must remain out
+of the app binary and source repository. Production deployments should also define
+backup, retention, privacy, and incident-response procedures.
+
+\chapter{Testing and Evaluation}
+The Kotlin sources can be compiled with the repository's Gradle wrapper:
+
+\begin{lstlisting}[language=bash]
+./gradlew :app:compileDebugKotlin
+\end{lstlisting}
+
+Before release, test authentication, classroom membership, Firestore permissions,
+offline and reconnect behavior, message operations, and account deletion using a
+non-production Firebase project. Verify that class ownership transfers as intended
+and that failures during cleanup are communicated clearly. Record test outcomes,
+device models, Android versions, and any discovered defects here:
+
+\vspace{1em}
+\fbox{\parbox[c][4cm][c]{0.96\textwidth}{\centering
+    \textit{Testing results and evaluation notes slot}
+}}
+
+\chapter{Conclusion and Future Work}
+OMNIRA provides an integrated Android experience for classroom content, schedules,
+attendance, notifications, and communication. The current implementation demonstrates
+these workflows using Compose and Firebase services. Important future work includes
+tightening Firestore authorization, adding automated tests for critical user journeys,
+moving multi-step deletion to trusted server code, and supporting safe cleanup of
+uploaded media.
+
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{itemize}[leftmargin=*]
+    \item Android Developers, \url{https://developer.android.com/}
+    \item Firebase Documentation, \url{https://firebase.google.com/docs}
+    \item Jetpack Compose Documentation, \url{https://developer.android.com/compose}
+    \item Cloudinary Documentation, \url{https://cloudinary.com/documentation}
+\end{itemize}
+
+\end{document}
